@@ -13,27 +13,27 @@ extension FileManager: DataPersistenceObject {
         URL(fileURLWithPath: NSHomeDirectory())
     }
 
-    public var local: File {
+    public var app: File {
         .init(self, at: home)
     }
     
-    public func read(dataAt path: Path) throws -> Data {
-        try local.read(at: path)
+    public func read(at path: CodingPath) throws -> Data {
+        try app.read(at: path)
     }
     
-    public func write(_ data: Data, to path: Path) throws {
-        try local.write(data, to: path)
+    public func write(_ data: Data, to path: CodingPath) throws {
+        try app.write(data, to: path)
     }
     
-    public func delete(dataAt path: Path) throws {
-        try local.delete(dataAt: path)
+    public func delete(at path: CodingPath) throws {
+        try app.delete(at: path)
     }
     
     public func deleteAll() throws {
-        try local.deleteAll()
+        try app.deleteAll()
     }
     
-    public func cloud(forUbiquityContainerIdentifier identifier: String? = nil) throws -> File {
+    public func iCloud(containerIdentifier identifier: String? = nil) throws -> File {
         try .init(
             self,
             at: url(forUbiquityContainerIdentifier: identifier)
@@ -60,11 +60,11 @@ extension FileManager: DataPersistenceObject {
             )
         }
         
-        public func read(dataAt path: Path) throws -> Data {
+        public func read(at path: CodingPath) throws -> Data {
             try Data(contentsOf: URL(baseURL: url, path: path))
         }
         
-        public func write(_ data: Data, to path: Path) throws {
+        public func write(_ data: Data, to path: CodingPath) throws {
             let url = URL(baseURL: self.url, path: path)
             try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             guard fileManager.createFile(atPath: url.path, contents: data) else {
@@ -72,19 +72,23 @@ extension FileManager: DataPersistenceObject {
             }
         }
         
-        public func delete(dataAt path: Path) throws {
+        public func delete(at path: CodingPath) throws {
             try fileManager.removeItem(at: URL(baseURL: url, path: path))
         }
         
         public func deleteAll() throws {
             try fileManager.removeItem(at: url)
         }
+        
+        public func url(for path: CodingPath) -> URL {
+            URL(baseURL: url, path: path)
+        }
     }
 }
 
 extension URL {
     
-    fileprivate init(baseURL: URL, path: Path) {
+    fileprivate init(baseURL: URL, path: CodingPath) {
         self = baseURL
         for (component, _) in path {
             appendPathComponent(component.stringValue)

@@ -11,8 +11,8 @@ import Combine
 @propertyWrapper
 public struct Persisted<Value> where Value: Codable {
     
-    let key: Path
-    var persistence: DataPersistence
+    let key: CodingPath
+    var persistence: DataPersistenceObject
     let defaultValue: Value
     
     public var decoder = JSONDecoder()
@@ -21,7 +21,8 @@ public struct Persisted<Value> where Value: Codable {
     public var wrappedValue: Value {
         get {
             do {
-                let value = try persistence.read(Value.self, at: key, using: decoder)
+
+                let value = try Value.read(from: persistence, at: key, using: decoder)
                 defer { on.read.send(value) }
                 return value
             } catch {
@@ -31,7 +32,7 @@ public struct Persisted<Value> where Value: Codable {
         }
         mutating set {
             do {
-                try persistence.write(newValue, to: key, using: encoder)
+                try newValue.write(to: persistence, at: key, using: encoder)
                 on.write.send(newValue)
             } catch {
                 on.error.send(error)
@@ -42,7 +43,7 @@ public struct Persisted<Value> where Value: Codable {
     public mutating func delete() {
         do {
             let oldValue = wrappedValue
-            try persistence.delete(dataAt: key)
+            try persistence.delete(at: key)
             on.delete.send(oldValue)
         } catch {
             on.error.send(error)
@@ -56,34 +57,36 @@ public struct Persisted<Value> where Value: Codable {
         error: PassthroughSubject<Error, Never>()
     )
     
-    public var projectedValue: Persisted { self }
+    public var projectedValue: Persisted {
+        get { self }
+        set { self = newValue }
+    }
 }
 
 extension Persisted {
     
-    init<Keys>(_ persistence: DataPersistence, _ key: Keys, _ defaultValue: Value) where Keys: RandomAccessCollection, Keys.Element == Path.Crumb {
+    init<Keys>(_ persistence: DataPersistenceObject, _ key: Keys, _ defaultValue: Value) where Keys: RandomAccessCollection, Keys.Element == CodingKey {
         self.persistence = persistence
-        self.key = Path(key)
+        self.key = CodingPath(key)
         self.defaultValue = defaultValue
     }
-    
 }
 
 extension Persisted {
     
-    public init(in persistence: DataPersistence, at key: Path.Crumb..., default defaultValue: Value) {
+    public init(in persistence: DataPersistenceObject, at key: CodingPath.Crumb..., default defaultValue: Value) {
         self.init(in: persistence, at: key, default: defaultValue)
     }
     
-    public init<Keys>(in persistence: DataPersistence, at key: Keys, default defaultValue: Value) where Keys: RandomAccessCollection, Keys.Element == Path.Crumb {
+    public init<Keys>(in persistence: DataPersistenceObject, at key: Keys, default defaultValue: Value) where Keys: RandomAccessCollection, Keys.Element == CodingKey {
         self.init(persistence, key, defaultValue)
     }
     
-    public init(wrappedValue: Value, in persistence: DataPersistence, at key: Path.Crumb..., default defaultValue: Value) {
+    public init(wrappedValue: Value, in persistence: DataPersistenceObject, at key: CodingPath.Crumb..., default defaultValue: Value) {
         self.init(wrappedValue: wrappedValue, in: persistence, at: key, default: defaultValue)
     }
     
-    public init<Keys>(wrappedValue: Value, in persistence: DataPersistence, at key: Keys, default defaultValue: Value) where Keys: RandomAccessCollection, Keys.Element == Path.Crumb {
+    public init<Keys>(wrappedValue: Value, in persistence: DataPersistenceObject, at key: Keys, default defaultValue: Value) where Keys: RandomAccessCollection, Keys.Element == CodingKey {
         self.init(in: persistence, at: key, default: defaultValue)
         self.wrappedValue = wrappedValue
     }
@@ -91,11 +94,11 @@ extension Persisted {
 
 extension Persisted where Value: ExpressibleByNilLiteral {
     
-    public init(in persistence: DataPersistence, at key: Path.Crumb..., default defaultValue: Value = nil) {
+    public init(in persistence: DataPersistenceObject, at key: CodingPath.Crumb..., default defaultValue: Value = nil) {
         self.init(in: persistence, at: key, default: defaultValue)
     }
     
-    public init<Keys>(in persistence: DataPersistence, at key: Keys, default defaultValue: Value = nil) where Keys: RandomAccessCollection, Keys.Element == Path.Crumb {
+    public init<Keys>(in persistence: DataPersistenceObject, at key: Keys, default defaultValue: Value = nil) where Keys: RandomAccessCollection, Keys.Element == CodingKey {
         self.init(persistence, key, defaultValue)
     }
 }

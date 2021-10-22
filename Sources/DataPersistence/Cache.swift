@@ -25,18 +25,18 @@ public class Cache: DataPersistenceObject {
         self.init(cache)
     }
     
-    public func read(dataAt path: Path) throws -> Data {
+    public func read(at path: CodingPath) throws -> Data {
         guard let data = ns.object(forKey: path.string as NSString) else {
             throw "No data found at path \(path)".error()
         }
         return data as Data
     }
     
-    public func write(_ data: Data, to path: Path) throws {
+    public func write(_ data: Data, to path: CodingPath) throws {
         ns.setObject(data as NSData, forKey: path.string as NSString, cost: data.count)
     }
     
-    public func delete(dataAt path: Path) throws {
+    public func delete(at path: CodingPath) throws {
         ns.removeObject(forKey: path.string as NSString)
     }
     

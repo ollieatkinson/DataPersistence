@@ -26,13 +26,3 @@ extension String {
         }
     }
 }
-
-extension Optional {
-    
-    func or(throw error: Error) throws -> Wrapped {
-        switch self {
-        case .none: throw error
-        case let o?: return o
-        }
-    }
-}

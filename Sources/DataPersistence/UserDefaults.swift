@@ -16,16 +16,16 @@ extension UserDefaults: DataPersistenceObject {
         set { set(newValue, forKey: UserDefaults.dataPersistenceKey)}
     }
     
-    public func read(dataAt path: Path) throws -> Data {
+    public func read(at path: CodingPath) throws -> Data {
         let data = try dictionary[path].or(throw: "Object at \(path) does not exist".error()) as? Data
         return try data.or(throw: "Object at \(path) is not of type Data".error())
     }
     
-    public func write(_ data: Data, to path: Path) throws {
+    public func write(_ data: Data, to path: CodingPath) throws {
         dictionary[path] = data
     }
     
-    public func delete(dataAt path: Path) throws {
+    public func delete(at path: CodingPath) throws {
         dictionary[path] = nil
     }
     

@@ -58,7 +58,7 @@ public struct Keychain: Equatable, Codable {
 
 extension Keychain.Account {
     
-    public func read(dataAt path: Path) throws -> Data {
+    public func read(at path: CodingPath) throws -> Data {
         
         var query = keychainQuery(forPath: path)
         
@@ -80,7 +80,7 @@ extension Keychain.Account {
         return data
     }
     
-    public func write(_ data: Data, to path: Path) throws {
+    public func write(_ data: Data, to path: CodingPath) throws {
         
         var query = keychainQuery(forPath: path)
         
@@ -97,7 +97,7 @@ extension Keychain.Account {
         }
     }
     
-    public func delete(dataAt path: Path) throws {
+    public func delete(at path: CodingPath) throws {
         if path.isEmpty {
             throw """
                     Cannot delete if the path is empty, please specify the path to the data you would like to delete.
@@ -168,7 +168,7 @@ extension Keychain.Account {
         }
     }
     
-    private func keychainQuery(forPath path: Path) -> [CFString: Any] {
+    private func keychainQuery(forPath path: CodingPath) -> [CFString: Any] {
         
         let genericPassword: KeychainQuery = GenericPasswordQuery(
             account: name,
@@ -224,7 +224,6 @@ private struct GenericPasswordQuery: KeychainQuery, Equatable {
         
         return o
     }
-    
 }
 
 extension Keychain {

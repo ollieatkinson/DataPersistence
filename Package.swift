@@ -8,11 +8,8 @@ let package = Package(
     products: [
         .library(name: "DataPersistence", targets: ["DataPersistence"]),
     ],
-    dependencies: [
-        .package(url: "https://github.com/ollieatkinson/Eumorphic.git", .branch("trunk"))
-    ],
     targets: [
-        .target(name: "DataPersistence", dependencies: ["Eumorphic"]),
+        .target(name: "DataPersistence"),
         .testTarget(name: "DataPersistenceTests", dependencies: ["DataPersistence"]),
     ]
 )
