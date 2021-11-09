@@ -61,7 +61,10 @@ extension FileManager: DataPersistenceObject {
         }
         
         public func read(at path: CodingPath) throws -> Data {
-            try Data(contentsOf: URL(baseURL: url, path: path))
+            guard fileManager.fileExists(atPath: URL(baseURL: url, path: path).path) else {
+                throw DataPersistenceError(.doesNotExist(path))
+            }
+            return try Data(contentsOf: URL(baseURL: url, path: path))
         }
         
         public func write(_ data: Data, to path: CodingPath) throws {

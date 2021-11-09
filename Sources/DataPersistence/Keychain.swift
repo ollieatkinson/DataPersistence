@@ -67,11 +67,13 @@ extension Keychain.Account {
         
         var _data: AnyObject? = nil
         let os = SecItemCopyMatching(query as CFDictionary, &_data)
-        
-        guard os == errSecSuccess else {
-            throw "Failed with code: \(os)".error()
+
+        switch os {
+        case errSecItemNotFound: throw DataPersistenceError(.doesNotExist(path))
+        case errSecSuccess: break
+        default: throw "Failed with code: \(os)".error()
         }
-        
+
         guard let data = _data as? Data else {
             assertionFailure("`data` should always be available if `status == errSecSuccess`")
             throw "`data` should always be available if `status == noErr`".error()

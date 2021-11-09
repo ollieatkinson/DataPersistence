@@ -93,42 +93,4 @@ class DictionaryTests: XCTestCase {
         XCTAssertEqual(array2.bidirectionalIndex(9), 9)
         XCTAssertEqual(array2.bidirectionalIndex(10), 10)
     }
-
-    func test_get_set() throws {
-
-        var dictionary: [String: Any] = [
-            "string": "hello world",
-            "int": 1,
-            "structure": [
-                "is": [
-                    "good": [
-                        true,
-                        [
-                            "and": [
-                                "i": [
-                                    "like": [
-                                        "pie",
-                                        "programming",
-                                        "dogs"
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ]
-
-        XCTAssertEqual(dictionary["string" as CodingPath], "hello world")
-        XCTAssertEqual(dictionary["int" as CodingPath], 1)
-
-        XCTAssert(dictionary["structure", "is", "good", 0] == true)
-        XCTAssert(dictionary["structure.is.good[0]" as CodingPath] == true)
-
-        XCTAssertNil(dictionary["structure", "is", "good", 1, "and", "i", "like", 3])
-
-        dictionary["structure", "is", "good", 5, "and", "i", "like", 3] = [ "noodles", "chicken" ]
-
-        XCTAssert(dictionary["structure", "is", "good", 5, "and", "i", "like", 3] == ["noodles", "chicken"])
-    }
 }

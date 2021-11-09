@@ -16,7 +16,11 @@ public func isNil(_ any: Any?) -> Bool {
 
 extension Optional {
 
-    func or(throw error: Error) throws -> Wrapped {
+    func or(throw error: DataPersistenceError.Message, _ function: String = #function, _ file: String = #file, _ line: Int = #line) throws -> Wrapped {
+        try or(throw: .init(error, function, file, line))
+    }
+
+    func or(throw error: DataPersistenceError) throws -> Wrapped {
         switch self {
         case .none: throw error
         case let o?: return o

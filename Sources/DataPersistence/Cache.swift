@@ -26,9 +26,8 @@ public class Cache: DataPersistenceObject {
     }
     
     public func read(at path: CodingPath) throws -> Data {
-        guard let data = ns.object(forKey: path.string as NSString) else {
-            throw "No data found at path \(path)".error()
-        }
+        let data = try ns.object(forKey: path.string as NSString)
+            .or(throw: .doesNotExist(path))
         return data as Data
     }
     

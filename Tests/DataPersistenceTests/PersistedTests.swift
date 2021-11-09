@@ -4,8 +4,8 @@ import XCTest
 
 class PersistedTests: XCTestCase {
 
-    static var store: StringAnyDataPersistenceObject = .init()
-    var store: StringAnyDataPersistenceObject {
+    static var store: Object = .init()
+    var store: Object {
         get { PersistedTests.store }
         set { PersistedTests.store = newValue }
     }
@@ -104,5 +104,32 @@ class PersistedTests: XCTestCase {
         XCTAssertNil(optional)
         XCTAssertThrowsError(try store.read(at: "maybe", "string"))
 
+    }
+
+    public class Object: DataPersistenceObject, ExpressibleByDictionaryLiteral {
+
+        private var storage: [String: Any] = [:]
+
+        public init() { }
+
+        public required init(dictionaryLiteral elements: (String, Any)...) {
+            storage = Dictionary(elements, uniquingKeysWith: { $1 })
+        }
+
+        public func read(at path: CodingPath) throws -> Data {
+            try storage.read(at: path)
+        }
+
+        public func write(_ data: Data, to path: CodingPath) throws {
+            try storage.write(data, to: path)
+        }
+
+        public func delete(at path: CodingPath) throws {
+            try storage.delete(at: path)
+        }
+
+        public func deleteAll() throws {
+            storage = [:]
+        }
     }
 }

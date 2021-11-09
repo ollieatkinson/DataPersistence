@@ -7,55 +7,54 @@
 
 import Foundation
 
-extension Dictionary where Key == String, Value == Any {
+protocol CodingContainer {
+    associatedtype Value
+    func get(_ path: CodingPath) throws -> Value
+    mutating func set(_ value: Value?, at path: CodingPath)
+}
 
-    public subscript<K>(first: K, codingPath: K...) -> Value? where K: CodingKey {
+extension CodingContainer {
+
+    subscript<K>(first: K, codingPath: K...) -> Value? where K: CodingKey {
         get { self[CodingPath([first] + codingPath)] }
         set { self[CodingPath([first] + codingPath)] = newValue }
     }
 
-    public subscript<K>(keys: [K]) -> Value? where K: CodingKey {
+    subscript<K>(keys: [K]) -> Value? where K: CodingKey {
         get { self[CodingPath(keys)] }
         set { self[CodingPath(keys)] = newValue }
     }
 
-    public subscript(first: CodingKey, codingPath: CodingKey...) -> Value? {
+    subscript(first: CodingKey, codingPath: CodingKey...) -> Value? {
         get { self[CodingPath([first] + codingPath)] }
         set { self[CodingPath([first] + codingPath)] = newValue }
     }
 
-    public subscript(keys: [CodingKey]) -> Value? {
+    subscript(keys: [CodingKey]) -> Value? {
         get { self[CodingPath(keys)] }
         set { self[CodingPath(keys)] = newValue }
     }
-
-    public subscript<T>(first: CodingPath.Crumb, codingPath: CodingPath.Crumb..., as type: T.Type = T.self) -> T? {
-        get { self[CodingPath([first] + codingPath)] as? T }
-        set { self[CodingPath([first] + codingPath)] = newValue }
-    }
-
-    public subscript<T>(codingPath: CodingPath, as type: T.Type = T.self) -> T? {
-        get { try? get(codingPath) as? T }
-        set { set(newValue, at: codingPath) }
-    }
-
-    public subscript(first: CodingPath.Crumb, codingPath: CodingPath.Crumb...) -> Value? {
+    
+    subscript(first: CodingPath.Crumb, codingPath: CodingPath.Crumb...) -> Value? {
         get { self[CodingPath([first] + codingPath)] }
         set { self[CodingPath([first] + codingPath)] = newValue }
     }
 
-    public subscript(codingPath: CodingPath) -> Value? {
+    subscript(codingPath: CodingPath) -> Value? {
         get { try? get(codingPath) }
         set { set(newValue, at: codingPath) }
     }
+}
 
-    public func get(_ path: CodingPath) throws -> Value {
+extension Dictionary: CodingContainer where Key == String, Value == Any {
+
+    func get(_ path: CodingPath) throws -> Value {
         guard let (head, remaining) = path.first else { return self }
         guard let value = self[head.stringValue] else { throw "\(path) → Key \(head.stringValue) does not exist at \(self)".error() }
         return try _get(remaining, from: value)
     }
 
-    public mutating func set(_ value: Value?, at path: CodingPath) {
+    mutating func set(_ value: Value?, at path: CodingPath) {
         guard let (head, remaining) = path.first else { return }
         switch (head.stringValue, remaining) {
         case nil: return
@@ -65,56 +64,16 @@ extension Dictionary where Key == String, Value == Any {
     }
 }
 
-extension Array where Element == Any {
+extension Array: CodingContainer where Element == Any {
 
-    public subscript<K>(first: K, codingPath: K...) -> Element? where K: CodingKey {
-        get { self[CodingPath([first] + codingPath)] }
-        set { self[CodingPath([first] + codingPath)] = newValue }
-    }
-
-    public subscript<K>(keys: [K]) -> Element? where K: CodingKey {
-        get { self[CodingPath(keys)] }
-        set { self[CodingPath(keys)] = newValue }
-    }
-
-    public subscript(first: CodingKey, codingPath: CodingKey...) -> Element? {
-        get { self[CodingPath([first] + codingPath)] }
-        set { self[CodingPath([first] + codingPath)] = newValue }
-    }
-
-    public subscript(keys: [CodingKey]) -> Element? {
-        get { self[CodingPath(keys)] }
-        set { self[CodingPath(keys)] = newValue }
-    }
-
-    public subscript<T>(first: CodingPath.Crumb, codingPath: CodingPath.Crumb..., as type: T.Type = T.self) -> T? {
-        get { self[CodingPath([first] + codingPath)] as? T }
-        set { self[CodingPath([first] + codingPath)] = newValue }
-    }
-
-    public subscript<T>(codingPath: CodingPath, as type: T.Type = T.self) -> T? {
-        get { try? get(codingPath) as? T }
-        set { set(newValue, at: codingPath) }
-    }
-
-    public subscript(first: CodingPath.Crumb, codingPath: CodingPath.Crumb...) -> Element? {
-        get { self[CodingPath([first] + codingPath)] }
-        set { self[CodingPath([first] + codingPath)] = newValue }
-    }
-
-    public subscript(codingPath: CodingPath) -> Element? {
-        get { try? get(codingPath) }
-        set { set(newValue, at: codingPath) }
-    }
-
-    public func get(_ path: CodingPath) throws -> Element {
+    func get(_ path: CodingPath) throws -> Element {
         guard let (head, remaining) = path.first else { return self }
         guard let idx = head.intValue.map(bidirectionalIndex) else { throw "\(path) → Path indexing into array \(self) must be an Int - got: \(head.stringValue)".error() }
         guard indices.contains(idx) else { throw "\(path) → Array index '\(idx)' out of bounds".error() }
         return try _get(remaining, from: self[idx])
     }
 
-    public mutating func set(_ value: Element?, at path: CodingPath) {
+    mutating func set(_ value: Element?, at path: CodingPath) {
         guard let (head, remaining) = path.first else { return }
         guard let idx = head.intValue.map(bidirectionalIndex) else { return }
         padded(to: idx, with: Any?.none as Any)
@@ -158,11 +117,12 @@ private func _get(_ path: CodingPath, from any: Any) throws -> Any {
 
 private func _set(_ value: Any?, at path: CodingPath, on any: Any) -> Any {
     guard let (crumb, _) = path.first else { return flattenOptionality(value as Any) }
-    if crumb.intValue != nil {
+    switch crumb {
+    case .int:
         var array = (any as? [Any]) ?? []
         array.set(value, at: path)
         return array
-    } else {
+    case .string:
         var dictionary = (any as? [String: Any]) ?? [:]
         dictionary.set(value, at: path)
         return dictionary
